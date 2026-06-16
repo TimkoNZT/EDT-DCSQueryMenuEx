@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?eclipse version="3.4"?>
+<plugin>
+
+   <extension point="org.eclipse.ui.commands">
+      <command
+            id="com.nzt.edt.dcs.querymenyex.editQuery"
+            icon="icons/etool16/query_editor.png"
+            name="%editQueryCommandName">
+      </command>
+   </extension>
+
+   <extension point="org.eclipse.ui.handlers">
+      <handler
+            class="com.nzt.edt.dcs.querybutton.handlers.EditQueryHandler"
+            commandId="com.nzt.edt.dcs.querymenyex.editQuery">
+      </handler>
+   </extension>
+
+   <extension point="org.eclipse.ui.menus">
+      <!-- Context menu for DCS embedded query editor -->
+      <menuContribution
+            allPopups="false"
+            locationURI="popup:com._1c.g5.v8.dt.dcs.ui.embeddedQueryEditor">
+         <command
+               commandId="com.nzt.edt.dcs.querymenyex.editQuery"
+               icon="icons/etool16/query_editor.png"
+               label="%editQueryContextMenuLabel"
+               style="push">
+         </command>
+      </menuContribution>
+   </extension>
+
+</plugin>
