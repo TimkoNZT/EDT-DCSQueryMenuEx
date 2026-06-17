@@ -10,6 +10,12 @@ dist/*.zip
 # Internal docs
 AGENTS.md
 
+# Decompiled EDT API reference
+ref/
+
+# Generated build config
+src/com/nzt/edt/dcs/querymenyex/handlers/BuildConfig.java
+
 # OS
 Thumbs.db
 .DS_Store

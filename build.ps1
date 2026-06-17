@@ -2,7 +2,8 @@
 param(
     [string]$Version,
     [string]$OutDir,
-    [string]$SrcDir
+    [string]$SrcDir,
+    [switch]$Release
 )
 $ErrorActionPreference = "Stop"
 
@@ -53,10 +54,23 @@ if (-not $edtHome) { $edtHome = $env:EDT_HOME }
 if (-not $edtHome -or -not (Test-Path $edtHome)) { Write-Error "EDT not found"; exit 1 }
 $pluginsDir = Join-Path $edtHome "plugins"
 
-# ---------- 2. Classpath ----------
+# ---------- 2. Generate BuildConfig ----------
+$debugEnabled = if ($Release) { "false" } else { "true" }
+$buildConfigDir = Join-Path $PluginDir "src\com\nzt\edt\dcs\querymenyex\handlers"
+$buildConfigFile = Join-Path $buildConfigDir "BuildConfig.java"
+$buildConfigContent = @"
+package com.nzt.edt.dcs.querymenyex.handlers;
+public final class BuildConfig {
+    public static final boolean DEBUG = $debugEnabled;
+}
+"@
+[System.IO.File]::WriteAllText($buildConfigFile, $buildConfigContent, [System.Text.UTF8Encoding]::new($false))
+Write-Output "BuildConfig: DEBUG=$debugEnabled"
+
+# ---------- 3. Classpath ----------
 $classpath = "$pluginsDir\*"
 
-# ---------- 3. Compile ----------
+# ---------- 4. Compile ----------
 if (Test-Path $TargetDir) { Remove-Item $TargetDir -Recurse -Force }
 $classesOut = Join-Path $TargetDir "classes"
 New-Item -ItemType Directory -Path $classesOut -Force | Out-Null
@@ -69,7 +83,7 @@ Write-Output "Compiling $($javaFiles.Count) source files..."
 if ($LASTEXITCODE -ne 0) { Write-Error "Compilation failed"; exit 1 }
 Write-Output "Compilation OK"
 
-# ---------- 4. Plugin JAR ----------
+# ---------- 5. Plugin JAR ----------
 $jarStage = Join-Path $TargetDir "jar-stage"
 New-Item -ItemType Directory -Path $jarStage -Force | Out-Null
 Copy-Item "$classesOut\*" $jarStage -Recurse -Force
@@ -105,7 +119,7 @@ Push-Location $jarStage
 Pop-Location
 Write-Output "Plugin JAR: $jarFile ($((Get-Item $jarFile).Length) bytes)"
 
-# ---------- 5. Feature JAR ----------
+# ---------- 6. Feature JAR ----------
 $featureDir = Join-Path $TargetDir "feature"
 New-Item -ItemType Directory -Path $featureDir -Force | Out-Null
 New-Item -ItemType Directory -Path (Join-Path $featureDir "META-INF") -Force | Out-Null
@@ -132,7 +146,7 @@ Push-Location $featureDir
 Pop-Location
 Write-Output "Feature JAR: $featureJar ($((Get-Item $featureJar).Length) bytes)"
 
-# ---------- 6. P2 repo ----------
+# ---------- 7. P2 repo ----------
 $p2repoDir = Join-Path $OutDir "p2repo"
 $1cedtc = Get-ChildItem $edtHome -Recurse -Filter "1cedtc.exe" | Select-Object -First 1 -ExpandProperty FullName
 if (-not $1cedtc) { Write-Error "1cedtc.exe not found"; exit 1 }
@@ -149,7 +163,7 @@ Write-Output "Running FeaturesAndBundlesPublisher..."
 Remove-Item -LiteralPath (Join-Path $p2repoDir "content_xml") -Recurse -ErrorAction SilentlyContinue
 Remove-Item -LiteralPath (Join-Path $p2repoDir "artifacts_xml") -Recurse -ErrorAction SilentlyContinue
 
-# ---------- 7. Inject category into content.xml ----------
+# ---------- 8. Inject category into content.xml ----------
 $contentJar = Join-Path $p2repoDir "content.jar"
 if (Test-Path $contentJar) {
     Add-Type -AssemblyName System.IO.Compression.FileSystem
@@ -193,7 +207,7 @@ if (Test-Path $contentJar) {
     Remove-Item $tmp -Recurse -Force
 }
 
-# ---------- 8. p2.index ----------
+# ---------- 9. p2.index ----------
 $idx = @"
 version=1
 metadata.repository.factory.order= content.jar
@@ -201,7 +215,7 @@ artifact.repository.factory.order= artifacts.jar
 "@
 [System.IO.File]::WriteAllText((Join-Path $p2repoDir "p2.index"), $idx, [System.Text.UTF8Encoding]::new($false))
 
-# ---------- 9. ZIP of P2 repo ----------
+# ---------- 10. ZIP of P2 repo ----------
 $zipFile = Join-Path $OutDir "edt_dcs_querymenyex_${PluginVersion}.zip"
 $tmpDir = Join-Path $OutDir "_zip_tmp"
 if (Test-Path $tmpDir) { Remove-Item $tmpDir -Recurse -Force }
