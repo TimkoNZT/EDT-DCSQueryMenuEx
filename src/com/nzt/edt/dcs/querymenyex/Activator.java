@@ -1,11 +1,11 @@
-package com.nzt.edt.dcs.querybutton;
+package com.nzt.edt.dcs.querymenyex;
 
 import org.eclipse.ui.plugin.AbstractUIPlugin;
 import org.osgi.framework.BundleContext;
 
 public class Activator extends AbstractUIPlugin {
 
-    public static final String PLUGIN_ID = "com.nzt.edt.dcs.querybutton";
+    public static final String PLUGIN_ID = "com.nzt.edt.dcs.querymenyex";
 
     private static Activator plugin;
 
